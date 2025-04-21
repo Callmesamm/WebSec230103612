@@ -56,7 +56,7 @@
                     <div class="col col-sm-12 col-lg-8 mt-3">
                         <div class="row mb-2">
                             <div class="col-8">
-                                <h3>{{$product->name}} (Stock: {{$product->stock}}) </h3>
+                                <h3>{{$product->name}} (Stock: {{$product->stock}})</h3>
                             </div>
                             <div class="col col-2">
                                 @can('edit_products')
@@ -74,8 +74,7 @@
                             <tr><th>Model</th><td>{{$product->model}}</td></tr>
                             <tr><th>Code</th><td>{{$product->code}}</td></tr>
                             <tr><th>Price</th><td>{{$product->price}}</td></tr>
-                            <tr><th>Stock</th><td>{{$product->stock}}
-                
+                            <tr><th>Stock</th><td>{{$product->stock}}</td></tr>
                             <tr><th>Description</th><td>{{$product->description}}</td></tr>
                         </table>
                         @if(auth()->user() && auth()->user()->hasRole('Customer'))

@@ -92,12 +92,10 @@
                                 @if(auth()->user()->hasRole('Employee') && $user->hasRole('Customer'))
                                     <form action="{{ route('users.add_credit', $user->id) }}" method="POST" style="display:inline;">
                                         @csrf
-                                        <input type="number" name="credit" min="1"  required class="form-control d-inline" style="width: 100px;" placeholder="Add Credit">
+                                        <input type="number" name="credit" min="1" required class="form-control d-inline" style="width: 100px;" placeholder="Add Credit">
                                         <button type="submit" class="btn btn-success">Add</button>
                                     </form>
                                 @endif
-                               
-                            
                                 @can('admin_users')
                                     <a class="btn btn-primary" href="{{ route('edit_password', [$user->id]) }}">Change Password</a>
                                 @endcan

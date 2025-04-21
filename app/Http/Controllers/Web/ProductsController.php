@@ -48,9 +48,6 @@ class ProductsController extends Controller {
         return view('products.edit', compact('product'));
     }
 
-
-    
-
     public function save(Request $request, Product $product = null) {
 
         $this->validate($request, [
@@ -68,16 +65,16 @@ class ProductsController extends Controller {
 
         return redirect()->route('products_list');
     }
-    
+
     public function delete(Request $request, Product $product) {
 
         if (!auth()->user()->hasRole('Employee')) {
-            abort(403, 'Only employees and admins can delete products.');
+            abort(403);
         }
 
         $product->delete();
 
-        return redirect()->route('products_list')->with('success', 'Product deleted successfully.');
+        return redirect()->route('products_list');
     }
 
     public function buy(Request $request, Product $product){
@@ -107,7 +104,6 @@ class ProductsController extends Controller {
 
         return redirect()->route('products_list')->with('success', 'Purchase successful!');
     }
-
 
     public function insufficientFunds(Request $request, Product $product)
     {

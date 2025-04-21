@@ -27,7 +27,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'credit',
-        'email_verified_at',
     ];
 
     public function purchases()
