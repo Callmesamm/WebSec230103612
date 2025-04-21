@@ -42,6 +42,9 @@ class UsersController extends Controller {
 	        'password' => ['required', 'confirmed', Password::min(8)->numbers()->letters()->mixedCase()->symbols()],
 	    	]);
     	}
+
+        
+
     	catch(\Exception $e) {
 
     		return redirect()->back()->withInput($request->input())->withErrors('Invalid registration information.');
@@ -56,6 +59,7 @@ class UsersController extends Controller {
 	    $user->save();
 
         $user->assignRole('Customer');
+        
         
         return redirect('/');
     }
@@ -242,4 +246,5 @@ public function addCredit(Request $request, User $user)
 
     return redirect()->route('users')->with('success', 'Credit added successfully.');
 }
-} 
+
+}
