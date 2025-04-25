@@ -13,6 +13,7 @@ use Artisan;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationEmail;
+use Laravel\Socialite\Facades\Socialite;
 use Carbon\Carbon;
 
 use App\Http\Controllers\Controller;
@@ -52,7 +53,31 @@ class UsersController extends Controller {
     
         return view('users.verified',compact('user'));
     }
+
+    public function redirectToGoogle()
+    {
+    return Socialite::driver('google')->redirect();
+    }
     
+
+    public function handleGoogleCallback() {
+        try {
+            $googleUser = Socialite::driver('google')->user();
+            $user = User::updateOrCreate([
+            'google_id' => $googleUser->id,
+            ], [
+                'name' => $googleUser->name,
+                'email' => $googleUser->email,
+                'google_token' => $googleUser->token,
+                'google_refresh_token' => $googleUser->refreshToken,
+            ]);
+            Auth::login($user);
+            return redirect('/');
+        } catch (\Exception $e) {
+            return redirect('/login')->with('error', 'Google login failed.'); // Handle errors
+        }
+       }
+       
 
     public function doRegister(Request $request) {
 

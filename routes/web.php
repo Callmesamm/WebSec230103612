@@ -21,6 +21,8 @@ Route::post('/users/{user}/credit', [UsersController::class, 'addCredit'])->name
 Route::get('verify', [UsersController::class, 'verify'])->name('verify');
 Route::get('/auth/google', [UsersController::class, 'redirectToGoogle'])->name('login_with_google');
 Route::get('/auth/google/callback', [UsersController::class, 'handleGoogleCallback']);
+Route::get('/auth/google',[UsersController::class, 'redirectToGoogle'])->name('login_with_google');
+Route::get('/auth/google/callback',[UsersController::class, 'handleGoogleCallback']);
 
 
 Route::get('products', [ProductsController::class, 'list'])->name('products_list');
@@ -29,6 +31,8 @@ Route::post('products/save/{product?}', [ProductsController::class, 'save'])->na
 Route::get('products/delete/{product}', [ProductsController::class, 'delete'])->name('products_delete');
 Route::post('/products/{product}/buy', [ProductsController::class, 'buy'])->name('products.buy')->middleware('auth');
 Route::get('products/insufficient-funds/{product}', [ProductsController::class, 'insufficientFunds'])->name('products.insufficient-funds')->middleware('auth');
+
+
 
 Route::get('/', function () {
     return view('welcome');
