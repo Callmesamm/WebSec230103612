@@ -54,6 +54,29 @@ class UsersController extends Controller {
         return view('users.verified',compact('user'));
     }
 
+    public function redirectTolinkedin()
+    {
+    return Socialite::driver('linkedin')->redirect();
+    }
+    
+    public function handleLinkedinCallback() {
+        try {
+            $linkedinUser = Socialite::driver('linkedin')->user();
+            $user = User::updateOrCreate([
+            'linkedin_id' => $linkedinUser->id,
+            ], [
+                'name' => $linkedinUser->name,
+                'email' => $linkedinUser->email,
+                'linkedin_token' => $linkedinUser->token,
+                'linkedin_refresh_token' => $linkedinUser->refreshToken,
+            ]);
+            Auth::login($user);
+            return redirect('/');
+        } catch (\Exception $e) {
+            return redirect('/login')->with('error', 'LinkedIn login failed.'); // Handle errors
+        }
+       }
+
     public function redirectToGoogle()
     {
     return Socialite::driver('google')->redirect();

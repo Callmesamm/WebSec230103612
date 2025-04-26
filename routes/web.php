@@ -23,6 +23,8 @@ Route::get('/auth/google', [UsersController::class, 'redirectToGoogle'])->name('
 Route::get('/auth/google/callback', [UsersController::class, 'handleGoogleCallback']);
 Route::get('/auth/google',[UsersController::class, 'redirectToGoogle'])->name('login_with_google');
 Route::get('/auth/google/callback',[UsersController::class, 'handleGoogleCallback']);
+Route::get('/auth/linkedin', [UsersController::class, 'redirectToLinkedin'])->name('login_with_linkedin');
+Route::get('/auth/linkedin/callback', [UsersController::class, 'handleLinkedinCallback']);
 
 
 Route::get('products', [ProductsController::class, 'list'])->name('products_list');
