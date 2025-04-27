@@ -58,7 +58,8 @@ class UsersController extends Controller {
     {
     return Socialite::driver('google')->redirect();
     }
-    
+
+
 
     public function handleGoogleCallback() {
         try {
@@ -77,6 +78,31 @@ class UsersController extends Controller {
             return redirect('/login')->with('error', 'Google login failed.'); // Handle errors
         }
        }
+       
+
+    Public function redirectTOlinkedIn()
+    {
+        return Socialite::driver('linkedin')->redirect();
+    }
+
+    public function handleLinkedInCallback() {
+        try {
+            $linkedInUser = Socialite::driver('linkedin')->user();
+            $user = User::updateOrCreate([
+                'linkedin_id' => $linkedInUser->id,
+            ], [
+                'name' => $linkedInUser->name,
+                'email' => $linkedInUser->email,
+                'linkedin_token' => $linkedInUser->token,
+                'linkedin_refresh_token' => $linkedInUser->refreshToken,
+            ]);
+            Auth::login($user);
+            return redirect('/');
+        } catch (\Exception $e) {
+            return redirect('/login')->with('error', 'LinkedIn login failed.'); // Handle errors
+        }
+    }
+
        
 
     public function doRegister(Request $request) {
