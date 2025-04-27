@@ -29,11 +29,6 @@
         <a href="{{route('login_with_google')}}" class="btn btn-success">Login with
         Google</a>
       </div>
-      <div class="form-group mb-2">
-        
-        <a href="{{route('login_with_linkedin')}}" class="btn btn-success">Login with
-        Linkedin</a>
-      </div>
     </form>
     </div>
   </div>

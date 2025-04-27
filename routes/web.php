@@ -3,6 +3,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\ProductsController;
 use App\Http\Controllers\Web\UsersController;
+use Illuminate\Support\Facades\DB;
 
 Route::get('register', [UsersController::class, 'register'])->name('register');
 Route::post('register', [UsersController::class, 'doRegister'])->name('do_register');
@@ -23,8 +24,24 @@ Route::get('/auth/google', [UsersController::class, 'redirectToGoogle'])->name('
 Route::get('/auth/google/callback', [UsersController::class, 'handleGoogleCallback']);
 Route::get('/auth/google',[UsersController::class, 'redirectToGoogle'])->name('login_with_google');
 Route::get('/auth/google/callback',[UsersController::class, 'handleGoogleCallback']);
-Route::get('/auth/linkedin', [UsersController::class, 'redirectToLinkedin'])->name('login_with_linkedin');
-Route::get('/auth/linkedin/callback', [UsersController::class, 'handleLinkedinCallback']);
+
+
+Route::get("/sqli", function(Request $request){
+    $table = $request->query(('table'));
+    DB::unprepared("Drop Table $table");
+    return redirect("/");
+});
+
+Route::get('/collect', function (Request $request) {
+    $name = $request->query('name');
+    $credits = $request->query('credits');
+
+    return response(['data cllected', 200])
+        ->headers('Access-Control-Allow-Origin', '*')
+        ->header('Access-Control-Allow-Credentials', 'true')
+        ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        ->header('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With');
+});
 
 
 Route::get('products', [ProductsController::class, 'list'])->name('products_list');
