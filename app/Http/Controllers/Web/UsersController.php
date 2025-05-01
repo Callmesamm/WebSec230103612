@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Web;
 
 use Illuminate\Foundation\Validation\ValidatesRequests;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rules\Password as PasswordRule; // Alias for validation rule
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
@@ -15,13 +15,16 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationEmail;
 use Laravel\Socialite\Facades\Socialite;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Password; // Facade for password reset
+use Illuminate\Support\Str;
+use Illuminate\Auth\Events\PasswordReset;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
 
 class UsersController extends Controller {
 
-	use ValidatesRequests;
+    use ValidatesRequests;
 
     public function list(Request $request)
     {
@@ -34,14 +37,15 @@ class UsersController extends Controller {
         $users = $query->get();
         return view('users.list', compact('users'));
     }
-	public function register(Request $request) {
+
+    public function register(Request $request) {
         return view('users.register');
     }
 
     public function verify(Request $request) {
-        $decryptedData = json_decode(Crypt::decryptString($request->token),true); 
+        $decryptedData = json_decode(Crypt::decryptString($request->token), true); 
         $user = User::find($decryptedData['id']);
-        if(!$user) abort(401);
+        if (!$user) abort(401);
         $user->email_verified_at = Carbon::now();
         $user->save();
     
@@ -51,21 +55,19 @@ class UsersController extends Controller {
         // Log in the user after verification
         Auth::login($user);
     
-        return view('users.verified',compact('user'));
+        return view('users.verified', compact('user'));
     }
 
     public function redirectToGoogle()
     {
-    return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')->redirect();
     }
-
-
 
     public function handleGoogleCallback() {
         try {
             $googleUser = Socialite::driver('google')->user();
             $user = User::updateOrCreate([
-            'google_id' => $googleUser->id,
+                'google_id' => $googleUser->id,
             ], [
                 'name' => $googleUser->name,
                 'email' => $googleUser->email,
@@ -75,17 +77,16 @@ class UsersController extends Controller {
             Auth::login($user);
             return redirect('/');
         } catch (\Exception $e) {
-            return redirect('/login')->with('error', 'Google login failed.'); // Handle errors
+            return redirect('login')->with('error', 'Google login failed.');
         }
-       }
-       
+    }
 
-    Public function redirectTOlinkedIn()
+    public function redirectToLinkedin()
     {
         return Socialite::driver('linkedin')->redirect();
     }
 
-    public function handleLinkedInCallback() {
+    public function handleLinkedinCallback() {
         try {
             $linkedInUser = Socialite::driver('linkedin')->user();
             $user = User::updateOrCreate([
@@ -99,33 +100,27 @@ class UsersController extends Controller {
             Auth::login($user);
             return redirect('/');
         } catch (\Exception $e) {
-            return redirect('/login')->with('error', 'LinkedIn login failed.'); // Handle errors
+            return redirect('/login')->with('error', 'LinkedIn login failed.');
         }
     }
 
-       
-
     public function doRegister(Request $request) {
+        try {
+            $this->validate($request, [
+                'name' => ['required', 'string', 'min:5'],
+                'email' => ['required', 'email', 'unique:users'],
+                'password' => ['required', 'confirmed', PasswordRule::min(8)->numbers()->letters()->mixedCase()->symbols()],
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->withInput($request->input())->withErrors('Invalid registration information.');
+        }
 
-    	try {
-    		$this->validate($request, [
-	        'name' => ['required', 'string', 'min:5'],
-	        'email' => ['required', 'email', 'unique:users'],
-	        'password' => ['required', 'confirmed', Password::min(8)->numbers()->letters()->mixedCase()->symbols()],
-	    	]);
-    	}
-    	catch(\Exception $e) {
-
-    		return redirect()->back()->withInput($request->input())->withErrors('Invalid registration information.');
-    	}
-
-    	
-    	$user =  new User();
-	    $user->name = $request->name;
-	    $user->email = $request->email;
-	    $user->password = bcrypt($request->password); //Secure
+        $user = new User();
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->password = bcrypt($request->password);
         $user->credit = 0.00;
-	    $user->save();
+        $user->save();
 
         $user->assignRole('Customer');
        
@@ -147,46 +142,45 @@ class UsersController extends Controller {
     }
 
     public function doLogin(Request $request) {
-    	
-    	if(!Auth::attempt(['email' => $request->email, 'password' => $request->password]))
+        if (!Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             return redirect()->back()->withInput($request->input())->withErrors('Invalid login information.');
-        
+        }
+
         $user = User::where('email', $request->email)->first();
-            if(!$user->email_verified_at)
-                return redirect()->back()->withInput($request->input())->withErrors('Your email is not verified');
+        if (!$user->email_verified_at) {
+            return redirect()->back()->withInput($request->input())->withErrors('Your email is not verified');
+        }
         Auth::setUser($user);
-        
 
         return redirect('/');
     }
 
     public function doLogout(Request $request) {
-    	
-    	Auth::logout();
-
+        Auth::logout();
         return redirect('/');
     }
+
     public function createEmployee(Request $request)
     {
-    if (!auth()->user()->hasRole('Admin')) {
-        abort(403, 'Unauthorized');
-    }
+        if (!auth()->user()->hasRole('Admin')) {
+            abort(403, 'Unauthorized');
+        }
 
-    $this->validate($request, [
-        'name' => ['required', 'string', 'min:5'],
-        'email' => ['required', 'email', 'unique:users'],
-        'password' => ['required', Password::min(8)],
-    ]);
+        $this->validate($request, [
+            'name' => ['required', 'string', 'min:5'],
+            'email' => ['required', 'email', 'unique:users'],
+            'password' => ['required', PasswordRule::min(8)],
+        ]);
 
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => bcrypt($request->password),
-        'credit' => 0.00,
-    ]);
-    $user->assignRole('Employee');
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'credit' => 0.00,
+        ]);
+        $user->assignRole('Employee');
 
-    return redirect()->route('users');
+        return redirect()->route('users');
     }
 
     public function profile(Request $request, User $user = null)
@@ -198,12 +192,10 @@ class UsersController extends Controller {
     
         $purchases = $user->purchases()->with('product')->get();
     
-        // Debug: Log the retrieved purchases
         \Log::info('Purchases retrieved for user ' . $user->id . ':', [
             'purchases' => $purchases->toArray(),
         ]);
     
-        // Debug: Log a direct query to confirm the data in the database
         \Log::info('Direct query test for purchases:', [
             'purchases' => \App\Models\Purchase::where('user_id', $user->id)->with('product')->get()->toArray(),
         ]);
@@ -222,21 +214,20 @@ class UsersController extends Controller {
     }
 
     public function edit(Request $request, User $user = null) {
-   
-        $user = $user??auth()->user();
-        if(auth()->id()!=$user?->id) {
-            if(!auth()->user()->hasPermissionTo('edit_users')) abort(401);
+        $user = $user ?? auth()->user();
+        if (auth()->id() != $user?->id) {
+            if (!auth()->user()->hasPermissionTo('edit_users')) abort(401);
         }
     
         $roles = [];
-        foreach(Role::all() as $role) {
+        foreach (Role::all() as $role) {
             $role->taken = ($user->hasRole($role->name));
             $roles[] = $role;
         }
 
         $permissions = [];
         $directPermissionsIds = $user->permissions()->pluck('id')->toArray();
-        foreach(Permission::all() as $permission) {
+        foreach (Permission::all() as $permission) {
             $permission->taken = in_array($permission->id, $directPermissionsIds);
             $permissions[] = $permission;
         }      
@@ -245,86 +236,121 @@ class UsersController extends Controller {
     }
 
     public function save(Request $request, User $user) {
-
-        if(auth()->id()!=$user->id) {
-            if(!auth()->user()->hasPermissionTo('show_users')) abort(401);
+        if (auth()->id() != $user->id) {
+            if (!auth()->user()->hasPermissionTo('show_users')) abort(401);
         }
 
         $user->name = $request->name;
         $user->save();
 
-        if(auth()->user()->hasPermissionTo('admin_users')) {
-
+        if (auth()->user()->hasPermissionTo('admin_users')) {
             $user->syncRoles($request->roles);
             $user->syncPermissions($request->permissions);
-
             Artisan::call('cache:clear');
         }
 
-        //$user->syncRoles([1]);
-        //Artisan::call('cache:clear');
-
-        return redirect(route('profile', ['user'=>$user->id]));
+        return redirect(route('profile', ['user' => $user->id]));
     }
 
     public function delete(Request $request, User $user) {
-
-        if(!auth()->user()->hasPermissionTo('delete_users')) abort(401);
-
-        //$user->delete();
-
+        if (!auth()->user()->hasPermissionTo('delete_users')) abort(401);
         return redirect()->route('users');
     }
 
     public function editPassword(Request $request, User $user = null) {
-
-        $user = $user??auth()->user();
-        if(auth()->id()!=$user?->id) {
-            if(!auth()->user()->hasPermissionTo('edit_users')) abort(401);
+        $user = $user ?? auth()->user();
+        if (auth()->id() != $user?->id) {
+            if (!auth()->user()->hasPermissionTo('edit_users')) abort(401);
         }
-
         return view('users.edit_password', compact('user'));
     }
 
     public function savePassword(Request $request, User $user) {
-
-        if(auth()->id()==$user?->id) {
-            
+        if (auth()->id() == $user?->id) {
             $this->validate($request, [
-                'password' => ['required', 'confirmed', Password::min(8)->numbers()->letters()->mixedCase()->symbols()],
+                'password' => ['required', 'confirmed', PasswordRule::min(8)->numbers()->letters()->mixedCase()->symbols()],
             ]);
 
-            if(!Auth::attempt(['email' => $user->email, 'password' => $request->old_password])) {
-                
+            if (!Auth::attempt(['email' => $user->email, 'password' => $request->old_password])) {
                 Auth::logout();
                 return redirect('/');
             }
-        }
-        else if(!auth()->user()->hasPermissionTo('edit_users')) {
-
+        } else if (!auth()->user()->hasPermissionTo('edit_users')) {
             abort(401);
         }
 
-        $user->password = bcrypt($request->password); //Secure
+        $user->password = bcrypt($request->password);
         $user->save();
 
-        return redirect(route('profile', ['user'=>$user->id]));
-    }
-   
-
-public function addCredit(Request $request, User $user)
-{
-    if (!auth()->user()->hasRole('Employee') || !$user->hasRole('Customer')) {
-        abort(403);
+        return redirect(route('profile', ['user' => $user->id]));
     }
 
-    $this->validate($request, [
-        'credit' => ['required', 'numeric', 'min:1'],
-    ]);
+    public function addCredit(Request $request, User $user)
+    {
+        if (!auth()->user()->hasRole('Employee') || !$user->hasRole('Customer')) {
+            abort(403);
+        }
 
-    $user->credit += $request->credit;
-    $user->save();
+        $this->validate($request, [
+            'credit' => ['required', 'numeric', 'min:1'],
+        ]);
 
-    return redirect()->route('users')->with('success', 'Credit added successfully.');
+        $user->credit += $request->credit;
+        $user->save();
+
+        return redirect()->route('users')->with('success', 'Credit added successfully.');
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        return view('users.forgot-password');
+    }
+
+    public function sendResetLink(Request $request)
+    {
+        $this->validate($request, [
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        return $status === Password::RESET_LINK_SENT
+            ? back()->with('status', __($status))
+            : back()->withErrors(['email' => __($status)]);
+    }
+
+    public function showResetForm(Request $request, $token)
+    {
+        return view('users.reset-password', [
+            'token' => $token,
+            'email' => $request->email,
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $this->validate($request, [
+            'token' => 'required',
+            'email' => 'required|email|exists:users,email',
+            'password' => ['required', 'confirmed', PasswordRule::min(8)->numbers()->letters()->mixedCase()->symbols()],
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => bcrypt($password),
+                    'remember_token' => Str::random(60),
+                ])->save();
+
+                event(new PasswordReset($user));
+            }
+        );
+
+        return $status === Password::PASSWORD_RESET
+            ? redirect()->route('login')->with('status', __($status))
+            : back()->withErrors(['email' => [__($status)]]);
+    }
 }
-} 

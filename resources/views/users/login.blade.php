@@ -14,27 +14,26 @@
         @endforeach
       </div>
       <div class="form-group mb-2">
-        <label for="model" class="form-label">Email:</label>
+        <label for="email" class="form-label">Email:</label>
         <input type="email" class="form-control" placeholder="email" name="email" required>
       </div>
       <div class="form-group mb-2">
-        <label for="model" class="form-label">Password:</label>
+        <label for="password" class="form-label">Password:</label>
         <input type="password" class="form-control" placeholder="password" name="password" required>
       </div>
       <div class="form-group mb-2">
         <button type="submit" class="btn btn-primary">Login</button>
       </div>
       <div class="form-group mb-2">
-        
-        <a href="{{route('login_with_google')}}" class="btn btn-success">Login with
-        Google</a>
+        <a href="{{ route('password.request') }}" class="btn btn-link">Forgot Password?</a>
       </div>
-
       <div class="form-group mb-2">
-        
-        <a href="{{route('login_with_linkedin')}}" class="btn btn-success">Login with
-        LinkedIn</a>
-    </form>
+        <a href="{{route('login_with_google')}}" class="btn btn-success">Login with Google</a>
+      </div>
+      <div class="form-group mb-2">
+        <a href="{{route('login_with_linkedin')}}" class="btn btn-success">Login with LinkedIn</a>
+      </div>
+      </form>
     </div>
   </div>
 </div>

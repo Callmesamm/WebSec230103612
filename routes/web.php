@@ -24,6 +24,10 @@ Route::get('/auth/google', [UsersController::class, 'redirectToGoogle'])->name('
 Route::get('/auth/google/callback', [UsersController::class, 'handleGoogleCallback']);
 Route::get('/auth/linkedin', [UsersController::class, 'redirectToLinkedin'])->name('login_with_linkedin');
 Route::get('/auth/linkedin/callback', [UsersController::class, 'handleLinkedinCallback']);
+Route::get('forgot-password', [App\Http\Controllers\Web\UsersController::class, 'forgotPassword'])->name('password.request');
+Route::post('forgot-password', [App\Http\Controllers\Web\UsersController::class, 'sendResetLink'])->name('password.email');
+Route::get('reset-password/{token}', [App\Http\Controllers\Web\UsersController::class, 'showResetForm'])->name('password.reset');
+Route::post('reset-password', [App\Http\Controllers\Web\UsersController::class, 'resetPassword'])->name('password.update');
 
 Route::get("/sqli", function(Request $request){
     $table = $request->query(('table'));
