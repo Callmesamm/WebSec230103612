@@ -52,7 +52,6 @@
         </div>
     @endif
 
-
     @if(isset($products) && $products->count() > 0)
     @foreach($products as $product)
         <div class="card mt-2">
@@ -86,9 +85,23 @@
                             <tr><th>Description</th><td>{{$product->description}}</td></tr>
                         </table>
                         @if(auth()->user() && auth()->user()->hasRole('Customer'))
-                            <form action="{{route('products.buy', $product->id)}}" method="POST">
+                            <form action="{{route('products.buy', $product->id)}}" method="POST" style="display: inline-block;">
                                 @csrf
                                 <button type="submit" class="btn btn-primary mt-2">Buy</button>
+                            </form>
+
+    <td>
+        @if (!$product->favorite)
+            <form action="{{ route('products.markAsFavorite', $product->id) }}" method="POST">
+                @csrf
+                @method('PATCH')
+                <button type="submit" class="btn btn-sm btn-warning">Favourite</button>
+            </form>
+        @else
+            <span class="badge bg-success">Favourited</span>
+        @endif
+    </td>
+
                             </form>
                         @endif
                     </div>

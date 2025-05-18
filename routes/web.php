@@ -77,3 +77,6 @@ Route::get('/prime', function () {
 Route::get('/test', function () {
     return view('test');
 });
+
+Route::patch('/products/{id}/mark-favorite', [ProductsController::class, 'toggleFavorite'])
+    ->name('products.markAsFavorite');

@@ -19,7 +19,6 @@ class ProductsController extends Controller {
     }
 
     public function list(Request $request) {
-
         $query = Product::select("products.*");
 
         $query->when($request->keywords, 
@@ -40,7 +39,6 @@ class ProductsController extends Controller {
     }
 
     public function edit(Request $request, Product $product = null) {
-
         if(!auth()->user()) return redirect('/');
 
         $product = $product??new Product();
@@ -49,7 +47,6 @@ class ProductsController extends Controller {
     }
 
     public function save(Request $request, Product $product = null) {
-
         $this->validate($request, [
             'code' => ['required', 'string', 'max:32'],
             'name' => ['required', 'string', 'max:128'],
@@ -67,7 +64,6 @@ class ProductsController extends Controller {
     }
 
     public function delete(Request $request, Product $product) {
-
         if (!auth()->user()->hasRole('Employee')) {
             abort(403);
         }
@@ -103,6 +99,23 @@ class ProductsController extends Controller {
         ]);
 
         return redirect()->route('products_list')->with('success', 'Purchase successful!');
+    }
+
+    public function toggleFavorite($id)
+    {
+        $product = Product::findOrFail($id);
+
+        $user = auth()->user();
+         if (!$user->hasRole('Customer')) {
+             abort(403, 'Only customers can favorite products.');
+         }
+
+        if (!$product->favorite_products) {
+            $product->favorite_products = 1;
+            $product->save();
+        }
+
+        return redirect()->back()->with('success', 'Product favorited successfully!');
     }
 
     public function insufficientFunds(Request $request, Product $product)

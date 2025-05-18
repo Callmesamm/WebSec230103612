@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model  {
 
-	protected $fillable = [
+    protected $fillable = [
         'code',
         'name',
         'price',
@@ -14,4 +14,9 @@ class Product extends Model  {
         'photo',
         'stock',
     ];
+
+    public function favoritedBy()
+    {
+        return $this->belongsToMany(User::class, 'favorite_products', 'product_id', 'user_id')->withTimestamps();
+    }
 }
